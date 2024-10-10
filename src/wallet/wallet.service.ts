@@ -30,6 +30,8 @@ export class WalletService {
 
     async deposit(userId: number, amount: number) {
         return this.prisma.$transaction(async (prisma) => {
+            console.log('incomming deposit', new Date().toString())
+
             // Lock the wallet row using `FOR UPDATE` to prevent other transactions from modifying it
             const wallet = await prisma.$queryRaw<Wallet[]>(
                 Prisma.sql`SELECT * FROM Wallet WHERE userId = ${userId} FOR UPDATE`
@@ -39,12 +41,14 @@ export class WalletService {
                 throw new Error(`Wallet for user ${userId} not found`);
             }
 
-            console.log(new Date().toISOString(), wallet)
+            console.log('deposit result', new Date().toString(), wallet)
 
             const newBalance = wallet[0].balance + amount;
 
             // Simulate a delay for testing race conditions
             await sleep(4000); // 3 seconds delay (for testing)
+
+            console.log('ending deposit', new Date().toString())
 
             // Update wallet balance
             return prisma.wallet.update({
@@ -57,8 +61,10 @@ export class WalletService {
     // Withdraw from wallet with row locking (FOR UPDATE)
     async withdraw(userId: number, amount: number) {
         return this.prisma.$transaction(async (prisma) => {
+            console.log('incomming withdraw', new Date().toString())
+
             const wallet = await prisma.$queryRaw<Wallet[]>(
-                Prisma.sql`SELECT * FROM Wallet WHERE userId = ${userId} FOR UPDATE`
+                Prisma.sql`SELECT * FROM Wallet WHERE userId = ${userId}`
             );
 
             if (!wallet || wallet.length === 0) {
@@ -69,12 +75,14 @@ export class WalletService {
                 throw new Error(`Insufficient balance. Current balance: ${wallet[0].balance}`);
             }
 
-            console.log(new Date().toISOString(), wallet)
+            console.log('withdraw result', new Date().toString(), wallet)
 
             // Subtract the amount from the balance
             const newBalance = wallet[0].balance - amount;
 
             // await sleep(3000); // long time process before update
+
+            console.log('ending withdraw', new Date().toString())
 
             // Update wallet balance
             return prisma.wallet.update({

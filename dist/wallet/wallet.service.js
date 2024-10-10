@@ -35,13 +35,15 @@ let WalletService = class WalletService {
     }
     async deposit(userId, amount) {
         return this.prisma.$transaction(async (prisma) => {
+            console.log('incomming deposit', new Date().toString());
             const wallet = await prisma.$queryRaw(client_1.Prisma.sql `SELECT * FROM Wallet WHERE userId = ${userId} FOR UPDATE`);
             if (!wallet || wallet.length === 0) {
                 throw new Error(`Wallet for user ${userId} not found`);
             }
-            console.log(new Date().toISOString(), wallet);
+            console.log('deposit result', new Date().toString(), wallet);
             const newBalance = wallet[0].balance + amount;
             await sleep(4000);
+            console.log('ending deposit', new Date().toString());
             return prisma.wallet.update({
                 where: { userId },
                 data: { balance: newBalance },
@@ -50,15 +52,17 @@ let WalletService = class WalletService {
     }
     async withdraw(userId, amount) {
         return this.prisma.$transaction(async (prisma) => {
-            const wallet = await prisma.$queryRaw(client_1.Prisma.sql `SELECT * FROM Wallet WHERE userId = ${userId} FOR UPDATE`);
+            console.log('incomming withdraw', new Date().toString());
+            const wallet = await prisma.$queryRaw(client_1.Prisma.sql `SELECT * FROM Wallet WHERE userId = ${userId}`);
             if (!wallet || wallet.length === 0) {
                 throw new Error(`Wallet for user ${userId} not found`);
             }
             if (wallet[0].balance < amount) {
                 throw new Error(`Insufficient balance. Current balance: ${wallet[0].balance}`);
             }
-            console.log(new Date().toISOString(), wallet);
+            console.log('withdraw result', new Date().toString(), wallet);
             const newBalance = wallet[0].balance - amount;
+            console.log('ending withdraw', new Date().toString());
             return prisma.wallet.update({
                 where: { userId },
                 data: { balance: newBalance },
